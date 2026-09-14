@@ -1,0 +1,5 @@
+node_modules/
+# Regenerate with `pnpm fixtures`. The captured *.stderr.txt files ARE committed — they're the parser tests.
+test/fixtures/*.mp4
+cutcheck-report.json
+*.log

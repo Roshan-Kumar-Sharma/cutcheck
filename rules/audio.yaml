@@ -1,0 +1,30 @@
+# cutcheck rulepack — audio
+#
+# Thresholds are DATA, not code. Edit them here; the check logic lives in src/rules/checks/<id>.ts.
+# Every threshold carries a source, the date it was last verified, and a confidence — because most
+# "platform specs" for social video are crowd-measured, not published. Stale measured_on = suspect.
+#
+# severity: S1 blocks the export (exit 1). S2 is advisory (exit 0). Taste is never S1.
+pack: audio
+version: 1
+rules:
+  - id: CB-AUD-001
+    name: loudness_integrated_out_of_range
+    severity: S1
+    applies_to: [reels, shorts]
+    requires: [loudness]
+    threshold:
+      target_lufs: -14
+      tolerance_lu: 1
+    source:
+      citation: >-
+        Practical short-form convention: -14 LUFS integrated. No official Instagram/TikTok/YouTube target
+        is published; Meta has stated it uses adaptive loudness management (xHE-AAC). Measurement method is
+        ITU-R BS.1770 / EBU R128 gated integrated loudness via ffmpeg's ebur128 filter.
+      url: https://tech.ebu.ch/publications/r128
+      measured_on: 2026-09-09
+      confidence: medium
+    rationale: >-
+      Platforms normalise playback toward roughly -14 LUFS. An export far above it gets turned down
+      (and was probably clipped to get there); far below it plays noticeably quieter than the feed around it.
+      Either way the viewer notices before the editor does.
