@@ -28,3 +28,28 @@ rules:
       Platforms normalise playback toward roughly -14 LUFS. An export far above it gets turned down
       (and was probably clipped to get there); far below it plays noticeably quieter than the feed around it.
       Either way the viewer notices before the editor does.
+
+  - id: CB-AUD-002
+    name: true_peak_over_ceiling
+    severity: S1
+    applies_to: [reels, shorts]
+    requires: [loudness]
+    threshold:
+      max_true_peak_dbtp: -1.0
+    source:
+      citation: >-
+        EBU R128 sets a Maximum Permitted True Peak Level of -1 dBTP for programme material, measured with
+        the true-peak algorithm of ITU-R BS.1770 (minimum 4x oversampling). Unlike the -14 LUFS target in
+        CB-AUD-001, this number is published in a standard rather than crowd-measured from screenshots,
+        which is why it carries high confidence -- but the standard addresses broadcast, not social
+        delivery. Streaming practice often tightens the ceiling to -2 dBTP for extra headroom against
+        lossy transcoding; lower max_true_peak_dbtp to adopt that, no code change needed.
+      url: https://tech.ebu.ch/publications/r128
+      measured_on: 2026-09-15
+      confidence: high
+    rationale: >-
+      True peak is the level of the waveform the stored samples reconstruct into on playback, and it can
+      sit above the highest stored sample. An export can therefore contain no clipped sample at all and
+      still overshoot the ceiling once a platform re-encodes it to AAC or Opus, where the overshoot becomes
+      audible distortion. Playback normalisation does not undo it -- turning a file down afterwards cannot
+      remove clipping already baked into the decode -- so this has to be caught before publish, not after.
