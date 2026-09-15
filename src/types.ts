@@ -47,10 +47,30 @@ export interface LoudnessMeasure {
   run: ToolRun;
 }
 
+export interface BlackSegment {
+  startSec: Seconds;
+  /** ffmpeg reports the last black frame's timestamp, so a run to end-of-file ends one frame short. */
+  endSec: Seconds;
+  durationSec: Seconds;
+}
+
+export interface BlackMeasure {
+  /** Every black run the filter reported, in order. An empty array is a real measurement: none found. */
+  segments: BlackSegment[];
+  /**
+   * The shortest run the filter was asked to report (`blackdetect=d=`). Carried so a rule can tell
+   * "no black" from "no black above the floor we measured at" — a rule whose threshold falls below this
+   * cannot be answered from this measurement and must report `skipped`.
+   */
+  minReportedSec: Seconds;
+  run: ToolRun;
+}
+
 /** Registry of measurement kinds. Add a key here when a new probe lands. */
 export interface Measures {
   loudness: LoudnessMeasure;
-  // Phase 0, next: black, freeze, crop, silence
+  black: BlackMeasure;
+  // Phase 0, next: freeze, crop, silence
 }
 export type MeasureKey = keyof Measures;
 
@@ -59,7 +79,7 @@ export type MeasureKey = keyof Measures;
  * registry. Without this the zod enum is a hand-maintained copy, and adding a measurement here but not
  * there makes a YAML rule fail with "invalid enum value" instead of working.
  */
-export const MEASURE_KEYS = ['loudness'] as const satisfies readonly (keyof Measures)[];
+export const MEASURE_KEYS = ['loudness', 'black'] as const satisfies readonly (keyof Measures)[];
 
 /**
  * Compile-time guard for the direction `satisfies` cannot check: a key added to `Measures` and NOT

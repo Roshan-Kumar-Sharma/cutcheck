@@ -1,5 +1,6 @@
 import type { MeasureKey, Measures, MediaFacts } from '../types.js';
 import { measureLoudness } from './ebur128.js';
+import { measureVideo } from './video.js';
 
 /**
  * Runs the measurement passes and merges whatever they produced into one `measures` map.
@@ -18,9 +19,9 @@ import { measureLoudness } from './ebur128.js';
  * A pass that no selected rule needs is never run: `--only CB-AUD-001` must not pay for a video decode.
  */
 export async function collectMeasures(media: MediaFacts, needed: ReadonlySet<MeasureKey>): Promise<Partial<Measures>> {
-  const [loudness] = await Promise.all([
+  const [loudness, video] = await Promise.all([
     needed.has('loudness') ? measureLoudness(media) : undefined,
-    // Phase 0 next: the video pass, gated on needed.has('black') || needed.has('freeze') || needed.has('crop')
+    measureVideo(media, needed),
   ]);
-  return { ...(loudness ? { loudness } : {}) };
+  return { ...(loudness ? { loudness } : {}), ...video };
 }
