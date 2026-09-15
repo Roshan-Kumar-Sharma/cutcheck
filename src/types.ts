@@ -54,6 +54,22 @@ export interface Measures {
 }
 export type MeasureKey = keyof Measures;
 
+/**
+ * Every key of `Measures`, as data, so the rulepack schema validates `requires` against the real
+ * registry. Without this the zod enum is a hand-maintained copy, and adding a measurement here but not
+ * there makes a YAML rule fail with "invalid enum value" instead of working.
+ */
+export const MEASURE_KEYS = ['loudness'] as const satisfies readonly (keyof Measures)[];
+
+/**
+ * Compile-time guard for the direction `satisfies` cannot check: a key added to `Measures` and NOT
+ * listed in MEASURE_KEYS. If any exists, this type is that key rather than `true` and the assignment
+ * below fails to compile, naming the key you forgot.
+ */
+type UnlistedMeasureKey = Exclude<MeasureKey, (typeof MEASURE_KEYS)[number]>;
+const _allMeasureKeysAreListed: [UnlistedMeasureKey] extends [never] ? true : UnlistedMeasureKey = true;
+void _allMeasureKeysAreListed;
+
 // ---------------------------------------------------------------------------------------------
 // Media facts — what ffprobe told us
 // ---------------------------------------------------------------------------------------------

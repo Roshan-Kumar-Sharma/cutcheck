@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TARGETS, type RuleDef } from '../types.js';
+import { MEASURE_KEYS, TARGETS, type RuleDef } from '../types.js';
 
 /** Validates the YAML rule shape at load time so a domain expert's typo is a clear error, not a silent skip. */
 export const RuleSourceSchema = z.object({
@@ -14,7 +14,7 @@ export const RuleDefSchema = z.object({
   name: z.string().regex(/^[a-z][a-z0-9_]*$/, 'name must be snake_case'),
   severity: z.enum(['S1', 'S2']),
   applies_to: z.array(z.enum(TARGETS)).min(1),
-  requires: z.array(z.enum(['loudness'])).default([]),
+  requires: z.array(z.enum(MEASURE_KEYS)).default([]),
   threshold: z.record(z.string(), z.unknown()),
   source: RuleSourceSchema,
   rationale: z.string().min(1),
