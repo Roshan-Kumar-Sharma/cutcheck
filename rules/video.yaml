@@ -1,0 +1,34 @@
+# cutcheck rulepack — video
+#
+# Thresholds are DATA, not code. Edit them here; the check logic lives in src/rules/checks/<id>.ts.
+# Every threshold carries a source, the date it was last verified, and a confidence — because most
+# "platform specs" for social video are crowd-measured, not published. Stale measured_on = suspect.
+#
+# severity: S1 blocks the export (exit 1). S2 is advisory (exit 0). Taste is never S1.
+pack: video
+version: 1
+rules:
+  - id: CB-VID-001
+    name: black_frames_at_edges
+    severity: S1
+    applies_to: [reels, shorts]
+    requires: [black]
+    threshold:
+      edge_window_ms: 500
+      max_black_ms: 100
+    source:
+      citation: >-
+        No platform publishes a black-frame tolerance, and neither number here is measured from one --
+        both are conventions chosen for this rulepack and should be tuned per client. 500 ms is the
+        window in which a viewer forms a first impression and from which platforms commonly draw an
+        autoplay thumbnail. 100 ms is three frames at 30fps: long enough to read as a glitch rather than
+        as a deliberate cut. Detection is ffmpeg's blackdetect at its default thresholds
+        (picture_black_ratio_th 0.98, pixel_black_th 0.1).
+      measured_on: 2026-09-15
+      confidence: low
+    rationale: >-
+      The first frames of a social export are its thumbnail and its autoplay impression, and black there
+      reads as a failed upload rather than as an edit -- viewers scroll before the content starts. Black
+      at the tail truncates the loop, which on Reels and Shorts plays straight back into the first frame.
+      Black in the middle of the timeline is a different defect with a different cause and belongs to
+      CB-VID-002; this rule deliberately only looks at the two ends.
