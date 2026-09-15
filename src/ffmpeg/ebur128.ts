@@ -18,15 +18,23 @@ export function parseEbur128Summary(stderr: string): Omit<LoudnessMeasure, 'run'
   const summaryAt = stderr.lastIndexOf('Summary:');
   if (summaryAt < 0) throw new Error('ebur128: no Summary block in ffmpeg stderr (did the filter run to end of stream?)');
   const s = stderr.slice(summaryAt);
-  const grab = (re: RegExp, what: string): number => {
-    const m = re.exec(s);
+  const grab = (haystack: string, re: RegExp, what: string): number => {
+    const m = re.exec(haystack);
     if (!m?.[1]) throw new Error(`ebur128: could not find ${what} in Summary block`);
     return m[1] === '-inf' ? -Infinity : Number(m[1]);
   };
+
+  // Anchor the peak on its heading, not on the first "Peak:" line. ebur128 labels the value line of
+  // BOTH peak sections "Peak:", and with peak=sample+true it prints "Sample peak:" first — so a
+  // first-match grab silently stores sample peak in a field named truePeakDbtp. Sample peak cannot see
+  // inter-sample overshoot, and CB-AUD-002 blocks exports on this number.
+  const truePeakAt = s.indexOf('True peak:');
+  if (truePeakAt < 0) throw new Error('ebur128: no "True peak:" section in Summary block (was the filter run with peak=true?)');
+
   return {
-    integratedLufs: grab(/^\s*I:\s+(-?[\d.]+|-inf)\s+LUFS/m, 'integrated loudness (I:)'),
-    loudnessRangeLu: grab(/^\s*LRA:\s+(-?[\d.]+|-inf)\s+LU\b/m, 'loudness range (LRA:)'),
-    truePeakDbtp: grab(/^\s*Peak:\s+(-?[\d.]+|-inf)\s+dBFS/m, 'true peak (Peak:)'),
+    integratedLufs: grab(s, /^\s*I:\s+(-?[\d.]+|-inf)\s+LUFS/m, 'integrated loudness (I:)'),
+    loudnessRangeLu: grab(s, /^\s*LRA:\s+(-?[\d.]+|-inf)\s+LU\b/m, 'loudness range (LRA:)'),
+    truePeakDbtp: grab(s.slice(truePeakAt), /^\s*Peak:\s+(-?[\d.]+|-inf)\s+dBFS/m, 'true peak (Peak:)'),
   };
 }
 
