@@ -38,7 +38,8 @@ never S1.
 | `rules/*.yaml` | Thresholds and citations. **Data, editable by a domain expert.** |
 | `src/rules/checks/<id>.ts` | The logic for one rule. Pure functions; no I/O. |
 | `src/types.ts` | The data model. Read this first. |
-| `src/ffmpeg/` | Measurement: `ffprobe`, `ebur128`, … Each attaches one key to `media.measures`. |
+| `src/ffmpeg/` | Measurement: `ffprobe`, `ebur128`, … Each pass contributes one key to `media.measures`. |
+| `src/ffmpeg/measure.ts` | Which passes run, and why there is one ffmpeg invocation per *stream type* rather than per measurement. |
 | `test/fixtures/*.ebur128.stderr.txt` | **Real** captured ffmpeg output. Parsers are tested against these, never against hand-typed approximations. |
 
 ## On the thresholds

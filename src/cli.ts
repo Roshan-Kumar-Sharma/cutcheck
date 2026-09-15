@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ffmpegEnv, REQUIRED_FILTERS } from './ffmpeg/env.js';
-import { measureLoudness } from './ffmpeg/ebur128.js';
+import { collectMeasures } from './ffmpeg/measure.js';
 import { probeMedia } from './ffmpeg/probe.js';
 import { renderText } from './report.js';
 import { evaluate } from './rules/engine.js';
@@ -35,10 +35,10 @@ program
     const rules = rulesFor(packs, target, opts.only?.split(','));
     if (!rules.length) throw new Error(`No rules apply to target=${target}${opts.only ? ` with --only ${opts.only}` : ''}`);
 
-    let media = await probeMedia(resolve(file));
-    media = await measureLoudness(media);
+    const media = await probeMedia(resolve(file));
+    const measures = await collectMeasures(media, new Set(rules.flatMap((r) => r.requires)));
 
-    const bundle: EditBundle = { target, media, createdAt: new Date().toISOString() };
+    const bundle: EditBundle = { target, media: { ...media, measures }, createdAt: new Date().toISOString() };
     const report = evaluate(bundle, rules, started);
 
     await writeFile(opts.out, JSON.stringify(report, null, 2));

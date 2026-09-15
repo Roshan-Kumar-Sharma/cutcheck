@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { measureLoudness } from '../src/ffmpeg/ebur128.js';
+import { collectMeasures } from '../src/ffmpeg/measure.js';
 import { probeMedia } from '../src/ffmpeg/probe.js';
 import { evaluate } from '../src/rules/engine.js';
 import { loadRulePacks, rulesFor } from '../src/rules/load.js';
@@ -14,7 +14,12 @@ describe.skipIf(!have)('end to end against real ffmpeg', () => {
     const packs = await loadRulePacks(new URL('../rules', import.meta.url).pathname);
     const rules = rulesFor(packs, 'reels', ['CB-AUD-001']);
 
-    const hot = evaluate({ target: 'reels', media: await measureLoudness(await probeMedia(fx('hot.mp4'))), createdAt: '' }, rules, performance.now());
+    const bundleFor = async (name: string, target: 'reels' | 'shorts') => {
+      const media = await probeMedia(fx(name));
+      return { target, media: { ...media, measures: await collectMeasures(media, new Set(rules.flatMap((r) => r.requires))) }, createdAt: '' };
+    };
+
+    const hot = evaluate(await bundleFor('hot.mp4', 'reels'), rules, performance.now());
     expect(hot.verdict).toBe('block');
     const f = hot.findings[0]!;
     expect(f.status).toBe('fail');
@@ -23,7 +28,7 @@ describe.skipIf(!have)('end to end against real ffmpeg', () => {
     expect(f.repro).toContain('--only CB-AUD-001');
     expect(hot.input.sha256).toMatch(/^[0-9a-f]{64}$/);
 
-    const ok = evaluate({ target: 'shorts', media: await measureLoudness(await probeMedia(fx('ok.mp4'))), createdAt: '' }, rules, performance.now());
+    const ok = evaluate(await bundleFor('ok.mp4', 'shorts'), rules, performance.now());
     expect(ok.verdict).toBe('ship');
     expect(ok.findings[0]!.status).toBe('pass');
   }, 30_000);
