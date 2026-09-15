@@ -37,6 +37,7 @@ export function evaluate(bundle: EditBundle, rules: RuleDef[], startedAtMs: numb
   const findings = rules.map((r) => evaluateRule(bundle, r, evaluatedAt));
   const summary = {
     s1Fail: findings.filter((f) => f.severity === 'S1' && f.status === 'fail').length,
+    s1Skipped: findings.filter((f) => f.severity === 'S1' && f.status === 'skipped').length,
     s2Fail: findings.filter((f) => f.severity === 'S2' && f.status === 'fail').length,
     pass: findings.filter((f) => f.status === 'pass').length,
     skipped: findings.filter((f) => f.status === 'skipped').length,
@@ -45,7 +46,8 @@ export function evaluate(bundle: EditBundle, rules: RuleDef[], startedAtMs: numb
     cutcheckVersion: CUTCHECK_VERSION,
     target: bundle.target,
     input: { path: bundle.media.path, sha256: bundle.media.sha256, durationSec: bundle.media.durationSec },
-    verdict: summary.s1Fail > 0 ? 'block' : 'ship',
+    // A ship-blocking rule that could not run blocks too. See the note on Report.verdict.
+    verdict: summary.s1Fail + summary.s1Skipped > 0 ? 'block' : 'ship',
     summary,
     findings,
     timing: { totalMs: Math.round(performance.now() - startedAtMs) },

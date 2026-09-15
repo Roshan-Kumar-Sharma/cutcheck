@@ -160,9 +160,17 @@ export interface Report {
   cutcheckVersion: string;
   target: Target;
   input: { path: string; sha256: string; durationSec: Seconds };
-  /** `block` iff any S1 finding failed. Skipped never blocks — but it is surfaced loudly. */
+  /**
+   * `block` iff an S1 rule failed **or** an S1 rule could not run.
+   *
+   * "We could not measure it" is not evidence the file is fine — the conditions that produce a skip
+   * (no audio stream, a filter missing from the ffmpeg build, a parser that broke on new output) all
+   * correlate with something being wrong. And since the exit code is the entire product, shipping on a
+   * skipped S1 would make `skipped` and `pass` the same thing to every caller, which is commitment #2
+   * honoured in the JSON and broken at the gate.
+   */
   verdict: 'ship' | 'block';
-  summary: { s1Fail: number; s2Fail: number; pass: number; skipped: number };
+  summary: { s1Fail: number; s1Skipped: number; s2Fail: number; pass: number; skipped: number };
   findings: Finding[];
   timing: { totalMs: number };
   evaluatedAt: string;

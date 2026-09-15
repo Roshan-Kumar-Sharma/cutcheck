@@ -16,8 +16,10 @@ pnpm cutcheck doctor                   # verifies ffmpeg/ffprobe + required filt
 pnpm cutcheck run edit.mp4 --target reels
 ```
 
-Exit code `1` if any **S1** (ship-blocking) rule fails. **S2** rules are advisory and never block — taste is
-never S1.
+Exit code `1` if any **S1** (ship-blocking) rule fails **or could not run**. A measurement that didn't
+happen is not a pass: an unverified S1 blocks, because "we couldn't check the loudness on this export" and
+"the loudness is fine" must not look the same to a caller reading an exit code. **S2** rules are advisory
+and never block — taste is never S1.
 
 ## Three commitments
 
@@ -26,8 +28,8 @@ never S1.
    with no model at all.
 2. **The asymmetric error drives the design.** Missing a real defect (it publishes on a client's brand
    account) costs far more than a false alarm (a human glances and dismisses). The system is biased toward
-   flagging, a missing measurement is reported as `skipped` — never `pass` — and the headline eval metric is
-   **miss rate on ship-blocking defects**, not accuracy.
+   flagging, a missing measurement is reported as `skipped` — never `pass` — a skipped **S1** blocks the
+   same as a failure, and the headline eval metric is **miss rate on ship-blocking defects**, not accuracy.
 3. **Provenance on everything.** Every finding carries the exact tool command that produced the number, the
    tool version, the rule's citation, when the threshold was last verified, and a one-line repro.
 
