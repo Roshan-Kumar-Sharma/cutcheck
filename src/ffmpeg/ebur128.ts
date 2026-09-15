@@ -34,7 +34,10 @@ export function parseEbur128Summary(stderr: string): Omit<LoudnessMeasure, 'run'
 export async function measureLoudness(media: MediaFacts): Promise<MediaFacts> {
   if (!media.audio) return media; // rules that `require: [loudness]` will report `skipped`, loudly
   const env = await ffmpegEnv();
-  const args = ['-hide_banner', '-nostats', '-i', media.path, '-filter_complex', 'ebur128=peak=true', '-f', 'null', '-'];
+  // -vn drops video from the null output, so ffmpeg never decodes the video stream. Loudness is an
+  // audio-only measurement and decoding is ~94% of the cost: 991ms -> 171ms on a 60s 1080x1920 h264
+  // clip, byte-identical Summary block. Keep scripts/make-fixtures.sh in step with these args.
+  const args = ['-hide_banner', '-nostats', '-i', media.path, '-vn', '-filter_complex', 'ebur128=peak=true', '-f', 'null', '-'];
   const res = await run('ffmpeg', args);
   if (res.exitCode !== 0) throw new Error(`ffmpeg ebur128 failed on ${media.path} (exit ${res.exitCode}):\n${res.stderr.slice(-800)}`);
   const parsed = parseEbur128Summary(res.stderr);

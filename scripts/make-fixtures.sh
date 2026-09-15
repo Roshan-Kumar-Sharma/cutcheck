@@ -13,7 +13,8 @@ gen() {
 gen ok.mp4  "+8dB"
 gen hot.mp4 "+14dB"
 for f in ok hot; do
-  ffmpeg -hide_banner -nostats -i "$f.mp4" -filter_complex "ebur128=peak=true" -f null - 2> "$f.ebur128.stderr.txt"
+  # These args must match src/ffmpeg/ebur128.ts exactly — the captured stderr IS the parser test.
+  ffmpeg -hide_banner -nostats -i "$f.mp4" -vn -filter_complex "ebur128=peak=true" -f null - 2> "$f.ebur128.stderr.txt"
   printf "%-4s  I=%s LUFS  TP=%s dBTP\n" "$f" \
     "$(grep -E '^\s+I:' "$f.ebur128.stderr.txt" | awk '{print $2}')" \
     "$(grep -E '^\s+Peak:' "$f.ebur128.stderr.txt" | awk '{print $2}')"
