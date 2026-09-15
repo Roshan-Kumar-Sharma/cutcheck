@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderText } from '../src/report.js';
+import { renderText, shortCitation } from '../src/report.js';
 import type { Finding, FindingStatus, Report, Severity } from '../src/types.js';
 
 const run = { tool: 'ffprobe', toolVersion: '0', command: 'ffprobe x.mp4', durationMs: 1 };
@@ -36,6 +36,31 @@ const report = (findings: Finding[]): Report => ({
   findings,
   timing: { totalMs: 10 },
   evaluatedAt: '2026-09-15T00:00:00Z',
+});
+
+describe('shortCitation', () => {
+  it('does not cut a standards reference at its internal period', () => {
+    const c = 'Measured with the true-peak algorithm of ITU-R BS.1770 at 4x oversampling.';
+    // What the previous first-period split produced, for the record:
+    expect(c.split('.')[0]).toBe('Measured with the true-peak algorithm of ITU-R BS');
+    expect(shortCitation(c)).toBe(c);
+  });
+  it('never ends a truncation on a dangling period', () => {
+    const c = 'EBU R128 sets a Maximum Permitted True Peak Level of -1 dBTP for programme material, measured with the algorithm of ITU-R BS.1770.';
+    expect(shortCitation(c)).not.toMatch(/\.…$/);
+    expect(shortCitation(c).endsWith('…')).toBe(true);
+  });
+  it('leaves a short citation untouched, with no ellipsis', () => {
+    expect(shortCitation('Short enough.')).toBe('Short enough.');
+  });
+  it('collapses the newlines a YAML folded block leaves behind', () => {
+    expect(shortCitation('one\n  two\n  three')).toBe('one two three');
+  });
+  it('truncates on a word boundary', () => {
+    const out = shortCitation('alpha bravo charlie delta echo foxtrot golf hotel', 20);
+    expect(out.endsWith('…')).toBe(true);
+    expect(out).toBe('alpha bravo charlie…');
+  });
 });
 
 describe('renderText', () => {

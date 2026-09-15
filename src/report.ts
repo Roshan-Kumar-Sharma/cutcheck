@@ -7,6 +7,19 @@ function icon(f: Finding): string {
   return f.severity === 'S1' ? '!' : '–';
 }
 
+/**
+ * The JSON report carries the full citation; this line is a glance. Truncate on a word boundary rather
+ * than at the first '.', because standards references are full of periods — "ITU-R BS.1770",
+ * "BT.1359-1", "EBU Tech 3341" — and splitting on them cuts mid-reference.
+ */
+export function shortCitation(citation: string, max = 110): string {
+  const flat = citation.replace(/\s+/g, ' ').trim();
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).replace(/[,;:.]$/, '')}…`;
+}
+
 function blockReason(s: Report['summary']): string {
   if (s.s1Fail && s.s1Skipped) return 'ship-blocking defects found, and other S1 checks could not run';
   if (s.s1Fail) return 'do not publish';
@@ -24,7 +37,7 @@ export function renderText(r: Report): string {
     if (f.status !== 'skipped' && Object.keys(f.measured).length) {
       lines.push(`    measured: ${Object.entries(f.measured).map(([k, v]) => `${k}=${v}`).join('  ')}`);
     }
-    lines.push(`    source: ${f.provenance.source.citation.split('.')[0]}. (${f.provenance.source.confidence} confidence, verified ${f.provenance.source.measured_on})`);
+    lines.push(`    source: ${shortCitation(f.provenance.source.citation)} (${f.provenance.source.confidence} confidence, verified ${f.provenance.source.measured_on})`);
   }
   lines.push('');
   const s = r.summary;
